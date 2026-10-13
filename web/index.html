@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Halo</title>
+<style>
+@font-face{font-family:Rubik;font-weight:400;font-display:swap;src:url(fonts/rubik-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:Rubik;font-weight:500;font-display:swap;src:url(fonts/rubik-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:Rubik;font-weight:700;font-display:swap;src:url(fonts/rubik-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:Rubik;font-weight:400;font-display:swap;src:url(fonts/rubik-hebrew-400-normal.woff2) format('woff2');unicode-range:U+0307-0308,U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+@font-face{font-family:Rubik;font-weight:500;font-display:swap;src:url(fonts/rubik-hebrew-500-normal.woff2) format('woff2');unicode-range:U+0307-0308,U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+@font-face{font-family:Rubik;font-weight:700;font-display:swap;src:url(fonts/rubik-hebrew-700-normal.woff2) format('woff2');unicode-range:U+0307-0308,U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+@font-face{font-family:"JetBrains Mono";font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format('woff2')}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;-webkit-user-select:none;user-select:none}
+input{-webkit-user-select:text;user-select:text}
+[hidden]{display:none!important}
+.login-err{color:var(--danger);font-size:13px;min-height:18px;padding-inline:4px}
+.raw{font-family:var(--mono);font-size:11px;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;max-height:40vh;overflow:auto;-webkit-user-select:text;user-select:text}
+.net.off{color:var(--muted)}
+.net.warn{color:var(--warn)}
+</style>
+</head><body>
+<style>
+/* Layout: one phone column - status ring card on top, actions, devices, schedules, Wi-Fi, more; bottom tab bar. Dark is pure black with Breeze-like glow. */
+:root{
+  --display:"Rubik",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  --bg:#eef2f6; --surface:#ffffff; --surface-2:#f3f6f9; --line:#dbe2ea; --fg:#14202c; --muted:#5d6b7a; --off:#b4bfca;
+  --accent:#f5843a; --accent-soft:#fff0e5; --on-accent:#fff; --up:#0e9bb8;
+  --ok:#1f9d63; --warn:#c79a00; --danger:#d64545; --scrim:rgba(10,20,30,.35); --glow:rgba(245,132,58,.10);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#000; --surface:#111316; --surface-2:#1a1d22; --line:#22262d; --fg:#eef1f5; --muted:#8a94a0; --off:#3a4049;
+  --accent:#ffa066; --accent-soft:#33200f; --on-accent:#1a0b00; --up:#4fd1e6;
+  --ok:#3cc786; --warn:#f2c230; --danger:#f06a6a; --scrim:rgba(0,0,0,.6); --glow:rgba(255,160,102,.13); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#000; --surface:#111316; --surface-2:#1a1d22; --line:#22262d; --fg:#eef1f5; --muted:#8a94a0; --off:#3a4049;
+  --accent:#ffa066; --accent-soft:#33200f; --on-accent:#1a0b00; --up:#4fd1e6;
+  --ok:#3cc786; --warn:#f2c230; --danger:#f06a6a; --scrim:rgba(0,0,0,.6); --glow:rgba(255,160,102,.13); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--display);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:-20%;z-index:0;pointer-events:none;background:radial-gradient(55% 35% at 50% 12%,var(--glow),transparent 70%)}
+button,input{font:inherit;color:inherit;background:none;border:0}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{position:relative;z-index:1;max-width:440px;margin:0 auto;padding-inline:16px;padding-block:12px calc(96px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:18px;direction:rtl}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;margin:0}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center}
+.logo svg{width:20px;height:20px}
+.top-r{display:flex;align-items:center;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);background:var(--surface);border:1px solid var(--line);padding:3px 10px;border-radius:99px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.menu-btn{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.menu-btn svg{width:16px;height:16px}
+
+/* hero */
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.hero-top{display:flex;gap:18px;align-items:center}
+.ring{position:relative;width:120px;height:120px;flex:none}
+.ring svg{width:100%;height:100%;display:block}
+.ring .c{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring b{font-size:28px;font-weight:500;font-variant-numeric:tabular-nums;display:block;line-height:1}
+.ring small{color:var(--muted);font-size:12px}
+#arc{transition:stroke-dashoffset .6s}
+.hstats{display:flex;flex-direction:column;gap:7px;min-width:0;flex:1}
+.net{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--ok)}
+.net i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.kvs{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);gap:8px}
+.kvs span:last-child{color:var(--fg);font-family:var(--mono);font-size:12px;direction:ltr;white-space:nowrap}
+.kvs .upv{color:var(--up)}
+.spark{width:100%;height:46px;display:block}
+.spark .a{fill:var(--accent-soft);stroke:none}
+.spark .l{fill:none;stroke:var(--accent);stroke-width:2;vector-effect:non-scaling-stroke}
+.spark .u{fill:none;stroke:var(--up);stroke-width:1.5;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
+.legend{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:-6px}
+
+.power-row{display:grid;grid-template-columns:1fr auto auto;gap:8px}
+.power{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;white-space:nowrap;min-width:0;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:500}
+.power svg{width:20px;height:20px}
+.side{display:flex;align-items:center;gap:6px;padding:12px;white-space:nowrap;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-size:13px;color:var(--fg)}
+.side svg{width:18px;height:18px;color:var(--accent)}
+.side[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.side.dz svg{color:var(--danger)}
+
+h2{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.04em;margin:0 4px 8px;display:flex;justify-content:space-between;align-items:center}
+.link{font-size:13px;color:var(--accent);font-weight:500;letter-spacing:0}
+.profiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.prof{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:16px;background:var(--surface);border:1px solid var(--line);font-size:13px;min-width:0;text-align:center}
+.prof svg{width:20px;height:20px;color:var(--muted)}
+.prof small{font-size:10.5px;color:var(--muted);line-height:1.3}
+.prof[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.prof[aria-pressed="true"] svg{color:var(--accent)}
+
+.banner{display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;padding-inline-start:14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);font-size:14px}
+.banner svg{width:20px;height:20px;color:var(--accent);flex:none}
+.banner .bt b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.banner .ok{color:var(--accent)!important;white-space:nowrap}
+.banner .x{border:0!important;color:var(--muted);padding:6px 8px}
+.banner .bt{flex:1;min-width:0}
+.banner .bt small{display:block;color:var(--muted);font-size:12px}
+.banner button{font-weight:500;font-size:13px;padding:6px 10px;border-radius:10px;border:1px solid var(--line)}
+.banner .ok{color:var(--ok)}
+.banner .no{color:var(--danger)}
+
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 4px 8px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:13px;padding:6px 12px;border-radius:12px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+
+.group{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);width:100%;text-align:start}
+.row:first-child{border-top:0}
+.ic{width:36px;height:36px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.ic svg{width:20px;height:20px}
+.ic.bad{background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t small{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.row .v{font-family:var(--mono);font-size:12px;color:var(--muted);direction:ltr;white-space:nowrap}
+.row .chev{width:14px;height:14px;color:var(--off);flex:none}
+.row.blk{opacity:.6}
+.sig{display:inline-flex;gap:1.5px;align-items:flex-end;height:11px}
+.sig i{width:3px;border-radius:1px;background:var(--off)}
+.sig i:nth-child(1){height:4px}.sig i:nth-child(2){height:6px}.sig i:nth-child(3){height:9px}.sig i:nth-child(4){height:11px}
+.sig i.on{background:var(--ok)}
+.sig.mid i.on{background:var(--warn)}
+.tag{font-size:11px;padding:1px 7px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.tag.acc{color:var(--accent);background:var(--accent-soft)}
+.tag.bad{color:var(--danger);background:color-mix(in srgb,var(--danger) 14%,transparent)}
+.tag.hot{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.sw{width:44px;height:26px;border-radius:99px;background:var(--line);position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:right .2s}
+.sw[aria-checked="true"]{background:var(--accent)}
+.sw[aria-checked="true"]::after{right:21px}
+.mini-btn{border:1px solid var(--line);background:var(--surface);font-size:13px;padding:6px 11px;border-radius:10px;white-space:nowrap}
+
+.row .tm{font-family:var(--mono);font-size:14px;direction:ltr;min-width:92px;text-align:start}
+.row .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.act{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500}
+.act i{width:8px;height:8px;border-radius:50%;background:var(--danger)}
+.act.lim i{background:var(--warn)}
+.days{display:flex;gap:3px}
+.days i{font-style:normal;font-size:10.5px;width:18px;height:18px;display:grid;place-items:center;border-radius:6px;color:var(--off);background:var(--surface-2)}
+.days i.on{color:var(--accent);background:var(--accent-soft)}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.row.dis .tm,.row.dis .info{opacity:.4}
+
+.more{background:var(--surface);border:1px solid var(--line);border-radius:18px}
+.more summary{list-style:none;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;font-weight:500;cursor:pointer}
+.more summary::-webkit-details-marker{display:none}
+.more summary svg{width:18px;height:18px;color:var(--muted);transition:transform .25s}
+.more[open] summary svg{transform:rotate(180deg)}
+.more-body{display:flex;flex-direction:column;gap:14px;padding:0 12px 14px}
+.more .group{background:var(--surface-2);border-color:transparent}
+.more .ic{background:var(--surface)}
+.sec-lbl{font-size:12px;color:var(--muted);padding-inline:4px;margin-bottom:-6px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface-2);border-radius:14px;padding:10px 12px;min-width:0}
+.stat b{display:block;font-family:var(--mono);font-size:16px;font-weight:500;direction:ltr;text-align:start}
+.stat span{font-size:12px;color:var(--muted)}
+.meter{height:4px;border-radius:2px;background:var(--line);margin-top:6px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent)}
+.meter.w i{background:var(--warn)}
+.bars{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:96px;padding:10px 12px 0;background:var(--surface-2);border-radius:14px}
+.bar{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.bar i{display:block;width:100%;max-width:16px;border-radius:5px 5px 2px 2px;background:var(--accent);min-height:3px}
+.bar.today i{background:var(--up)}
+.bar small{font-size:10.5px;color:var(--muted);padding-bottom:6px}
+.ports{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.port{background:var(--surface-2);border-radius:14px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;min-width:0;text-align:center}
+.port i{width:26px;height:20px;border-radius:5px;border:2px solid var(--off)}
+.port.on i{border-color:var(--ok)}
+.port b{font-family:var(--mono);font-weight:500;direction:ltr}
+.port small{color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.log .row{padding:9px 14px}
+.log .lt{font-family:var(--mono);font-size:12px;color:var(--muted);direction:ltr}
+.log .ld{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.log .ld.off{background:var(--danger)}
+.log .ld.w{background:var(--warn)}
+.log .t{font-size:14px}
+.note{font-size:12px;color:var(--muted);margin:0;padding-inline:4px}
+.note b{color:var(--warn);font-weight:500}
+
+nav.tabs{position:fixed;z-index:5;bottom:0;left:0;right:0;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));direction:rtl}
+nav.tabs button{color:var(--muted);font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px}
+nav.tabs button.on{color:var(--accent)}
+nav.tabs svg{width:22px;height:22px}
+
+.scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.sheet{width:100%;max-width:440px;max-height:calc(100% - 14px);overflow-y:auto;overscroll-behavior:contain;background:var(--bg);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));direction:rtl;display:flex;flex-direction:column;gap:12px;animation:sin .25s ease-out}
+@keyframes sin{from{transform:translateY(24px);opacity:.5}}
+.sheet h3{margin:0;font-size:19px;font-weight:700}
+.sheet p{margin:0;color:var(--muted);font-size:14px}
+.field{display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.field input[type=text]{flex:1;min-width:0;font-size:16px;padding:4px 0}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:13px;padding:8px 4px;border-radius:12px;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.trow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px;padding-inline-start:14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.trow input[type=time]{appearance:none;-webkit-appearance:none;width:120px;font-family:var(--mono);font-size:18px;text-align:center;padding:6px;border-radius:10px;background:var(--surface-2);direction:ltr}
+.lbl{font-size:12px;color:var(--muted);padding-inline:4px;margin-bottom:-4px}
+.dpick{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dpick button{aspect-ratio:1;max-width:100%;border-radius:50%;background:var(--surface);border:1px solid var(--line);color:var(--muted);font-weight:500}
+.dpick button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btns{display:flex;gap:8px}
+.btn{flex:1;padding:12px;border-radius:14px;font-weight:500;background:var(--surface);border:1px solid var(--line)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.dz{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.del{flex:0 0 auto;color:var(--danger);padding-inline:16px}
+.bigv{font-size:56px;font-weight:500;text-align:center;direction:ltr;line-height:1;font-variant-numeric:tabular-nums}
+.bigv small{font-size:15px;color:var(--muted)}
+.prog{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+.res{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.res .stat{background:var(--surface);border:1px solid var(--line)}
+.qr{align-self:center;background:#fff;padding:14px;border-radius:18px;width:220px;height:220px;display:grid;place-items:center}
+.qr img,.qr canvas{width:192px!important;height:192px!important}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:10px 14px;border-top:1px solid var(--line)}
+.kv:first-child{border-top:0}
+.kv span:first-child{color:var(--muted)}
+.kv span:last-child{font-family:var(--mono);font-size:12.5px;direction:ltr;text-align:left}
+.opts{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-top:1px solid var(--line);text-align:start}
+.opt:first-child{border-top:0}
+.opt span{display:flex;flex-direction:column;gap:2px}
+.opt small{font-size:12px;color:var(--muted)}
+.opt .chk{width:18px;height:18px;color:var(--accent);opacity:0;flex:none}
+.opt[aria-pressed="true"] .chk{opacity:1}
+.toast{position:fixed;bottom:calc(84px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:13px;z-index:40;white-space:nowrap;direction:rtl}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <h1 class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 10a12 12 0 0 1 16 0"/><path d="M7.5 13.5a7 7 0 0 1 9 0"/><circle cx="12" cy="17.5" r="1.4" fill="currentColor"/></svg></span>Halo</h1>
+    <div class="top-r">
+      <span class="pill" id="modePill"><span class="dot"></span>דמו - נתוני דוגמה</span>
+      <button class="menu-btn" id="menu" aria-label="פרטי הנתב"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+    </div>
+  </header>
+
+  <section class="hero" aria-label="מצב האינטרנט">
+    <div class="hero-top">
+      <div class="ring">
+        <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="var(--line)" stroke-width="10"/><circle id="arc" cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="200" transform="rotate(-90 60 60)"/></svg>
+        <div class="c"><div><b id="down">0</b><small>Mbps הורדה</small></div></div>
+      </div>
+      <div class="hstats">
+        <span class="net" id="net"><i></i>מחובר לאינטרנט</span>
+        <div class="kvs"><span>העלאה</span><span class="upv"><span id="up">0</span> Mbps</span></div>
+        <div class="kvs"><span>Ping</span><span><span id="ping">7</span> ms</span></div>
+        <div class="kvs"><span>מכשירים</span><span id="cnt">8</span></div>
+        <div class="kvs"><span>זמן פעולה</span><span id="upt">6d 14h</span></div>
+      </div>
+    </div>
+    <svg class="spark" viewBox="0 0 300 46" preserveAspectRatio="none" aria-hidden="true"><path class="a" id="sa"></path><path class="l" id="sl"></path><path class="u" id="su"></path></svg>
+    <div class="legend"><span>עכשיו</span><span>תעבורה - דקה אחרונה</span></div>
+  </section>
+
+  <div class="power-row">
+    <button class="power" id="speedBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4.5-5"/></svg>בדיקת מהירות</button>
+    <button class="side" id="guestBtn" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M18 9v6M15 12h6"/></svg>אורחים</button>
+    <button class="side dz" id="rebootBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>אתחול</button>
+  </div>
+
+  <div class="banner" id="newDev">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg>
+    <div class="bt"><b>Galaxy-A54 התחבר</b><small>מכשיר חדש · לפני 3 דקות</small></div>
+    <button class="x" id="ndNo" aria-label="סגור">✕</button>
+  </div>
+
+  <section class="sec">
+    <h2>מצב רשת</h2>
+    <div class="profiles" id="profiles"></div>
+  </section>
+
+  <section class="sec" id="devSec">
+    <h2><span id="devTitle">מכשירים</span><button class="link" id="pauseAll">השהה הכל</button></h2>
+    <div class="chips" id="filters"></div>
+    <div class="group" id="devs"></div>
+  </section>
+
+  <section class="sec" id="schSec">
+    <h2>זמני גלישה<button class="link" id="addSch">+ הוסף</button></h2>
+    <div class="group" id="schs"></div>
+  </section>
+
+  <section class="sec">
+    <h2>Wi-Fi</h2>
+    <div class="group">
+      <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10a12 12 0 0 1 16 0"/><path d="M7.5 13.5a7 7 0 0 1 9 0"/><circle cx="12" cy="17.5" r="1" fill="currentColor"/></svg></div><div class="t"><b id="ssid">Elior_Home</b><small id="wSub">2.4 + 5 GHz · Wi-Fi 7</small></div><button class="sw" role="switch" aria-checked="true" id="wMain" aria-label="רשת ראשית"></button></div>
+      <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div><div class="t"><b>סיסמה</b><small id="pw" style="direction:ltr;justify-content:flex-end">••••••••••</small></div><button class="mini-btn" id="pwShow">הצג</button><button class="mini-btn" id="pwCopy">העתק</button></div>
+      <button class="row" id="qrBtn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg></div><div class="t"><b>שיתוף ב-QR</b><small>אורח סורק ומתחבר</small></div><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h4l2-5 4 10 2-5h4"/></svg></div><div class="t"><b>Wi-Fi 7 MLO</b><small>חיבור כפול 2.4+5 למכשירים תומכים</small></div><button class="sw" role="switch" aria-checked="true" id="wMlo" aria-label="MLO"></button></div>
+      <button class="row" id="txBtn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20V10"/><path d="M8 14a5 5 0 0 1 8 0"/><path d="M5 11a9 9 0 0 1 14 0"/></svg></div><div class="t"><b>עוצמת שידור</b></div><span class="v" id="txV">חזקה</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 18h18"/><path d="M6 18V9M10 18V5M14 18v-7M18 18v-4"/></svg></div><div class="t"><b>ערוצים</b><small id="chV">2.4: 6 · 5: 36 · 160MHz</small></div><button class="mini-btn" id="chOpt">אופטימיזציה</button></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>רשת אורחים</h2>
+    <div class="group">
+      <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M18 9v6M15 12h6"/></svg></div><div class="t"><b id="gName">Elior_Guest</b><small id="gSub">כבויה</small></div><button class="sw" role="switch" aria-checked="false" id="wGuest" aria-label="רשת אורחים"></button></div>
+      <button class="row" id="gDurBtn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></div><div class="t"><b>כיבוי אוטומטי</b></div><span class="v" id="gDurV">אחרי 4 שעות</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg></div><div class="t"><b>בידוד מהרשת הביתית</b><small>אורחים לא רואים את המכשירים שלך</small></div><button class="sw" role="switch" aria-checked="true" aria-label="בידוד"></button></div>
+    </div>
+  </section>
+
+  <details class="more" id="more">
+    <summary>עוד הגדרות<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="more-body">
+      <div class="sec-lbl">צריכת נתונים</div>
+      <div class="stats">
+        <div class="stat"><b id="useD">18.4 GB</b><span id="useDl">הורדה היום</span></div>
+        <div class="stat"><b id="useU">2.1 GB</b><span id="useUl">העלאה היום</span></div>
+        <div class="stat"><b id="useT">412 GB</b><span id="useTl">החודש</span></div>
+      </div>
+      <div class="bars" id="bars" data-demo></div>
+
+      <div class="sec-lbl">בריאות הנתב</div>
+      <div class="stats">
+        <div class="stat"><b id="cpu">12%</b><span>מעבד</span><div class="meter"><i id="cpuM" style="width:12%"></i></div></div>
+        <div class="stat"><b id="mem">41%</b><span>זיכרון</span><div class="meter"><i id="memM" style="width:41%"></i></div></div>
+        <div class="stat"><b id="tmp">52°</b><span>טמפרטורה</span><div class="meter w"><i id="tmpM" style="width:52%"></i></div></div>
+      </div>
+
+      <div class="sec-lbl" data-demo>פורטים 2.5G</div>
+      <div class="ports" data-demo>
+        <div class="port on"><i></i><b>2.5G</b><small>WAN</small></div>
+        <div class="port on"><i></i><b>2.5G</b><small>מחשב עבודה</small></div>
+        <div class="port on"><i></i><b>1G</b><small>טלוויזיה</small></div>
+        <div class="port"><i></i><b>-</b><small>פנוי</small></div>
+      </div>
+
+      <div class="sec-lbl">בית חכם ו-Mesh</div>
+      <div class="group">
+        <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 7l10 10-5 5V2l5 5L7 17"/></svg></div><div class="t"><b>מרכז Bluetooth Mesh</b><small>3 מכשירים · בקרה מקומית</small></div><button class="sw" role="switch" aria-checked="true" aria-label="Bluetooth"></button></div>
+        <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M10.7 7.2L6.3 15.8M13.3 7.2l4.4 8.6M7.5 18h9"/></svg></div><div class="t"><b>יחידות Mesh</b><small>אין יחידות נוספות</small></div><button class="mini-btn" id="meshAdd">הוסף</button></div>
+      </div>
+
+      <div class="sec-lbl">אבטחה ורשת</div>
+      <div class="group">
+        <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/></svg></div><div class="t"><b>חסימת פרסומות ואתרים מזיקים</b><small>DNS מסנן לכל הרשת</small></div><button class="sw" role="switch" aria-checked="false" aria-label="חסימת פרסומות"></button></div>
+        <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div><div class="t"><b>DNS</b></div><span class="v">1.1.1.1</span></div>
+        <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg></div><div class="t"><b>שרת VPN ביתי</b><small>גישה לרשת הבית מבחוץ</small></div><button class="sw" role="switch" aria-checked="false" aria-label="VPN"></button></div>
+        <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div><div class="t"><b>הפניית פורטים</b><small>2 כללים</small></div><span class="v">8080, 32400</span></div>
+        <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg></div><div class="t"><b>נורית הנתב</b><small>כיבוי מלא בלילה</small></div><button class="sw" role="switch" aria-checked="true" aria-label="נורית"></button></div>
+        <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg></div><div class="t"><b>אתחול מתוזמן</b><small>כל יום ראשון 04:00</small></div><button class="sw" role="switch" aria-checked="true" aria-label="אתחול מתוזמן"></button></div>
+        <div class="row"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></div><div class="t"><b>עדכון קושחה</b><small id="fwV">גרסה 1.0.42 · עדכנית</small></div><button class="mini-btn" id="fwBtn">בדוק</button></div>
+      </div>
+
+      <div class="sec-lbl" data-demo>יומן אירועים</div>
+      <div class="group log" id="log" data-demo></div>
+
+      <p class="note" id="modeNote"><b>מצב הדגמה:</b> כל הנתונים כאן לדוגמה. בחיבור אמיתי הם יגיעו מהנתב.</p>
+    </div>
+  </details>
+</div>
+
+<nav class="tabs">
+  <button class="on" data-go="app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9H3z"/></svg>בית</button>
+  <button data-go="devSec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="3" width="12" height="18" rx="2"/></svg>מכשירים</button>
+  <button data-go="schSec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>זמני גלישה</button>
+  <button data-go="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>הגדרות</button>
+</nav>
+
+<div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="qrcode.js"></script>
+<script src="app.js"></script>
+</body></html>
