@@ -1,0 +1,34 @@
+name: Deploy cloud bridge
+
+on:
+  push:
+    branches: [main]
+    paths: ["cloud/**", ".github/workflows/cloud.yml"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Waiting for Cloudflare token
+        if: env.HAS_TOKEN != 'true'
+        run: echo "Add the CLOUDFLARE_API_TOKEN secret to deploy."
+
+      - name: Deploy worker
+        if: env.HAS_TOKEN == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: cloud
+          secrets: |
+            XIAOMI_USER
+            XIAOMI_PASS
+            ACCESS_KEY
+        env:
+          XIAOMI_USER: ${{ secrets.XIAOMI_USER }}
+          XIAOMI_PASS: ${{ secrets.XIAOMI_PASS }}
+          ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
