@@ -1,3 +1,4 @@
+// v1
 /* Halo cloud bridge - lets the app read the router through Xiaomi's cloud when you're away from home.
    Secrets (set by the GitHub workflow): XIAOMI_USER, XIAOMI_PASS, ACCESS_KEY.
    The router exposes only a few things to the cloud: download/upload speed, number of connected devices,
