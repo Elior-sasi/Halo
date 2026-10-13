@@ -1,4 +1,4 @@
-// v3
+// v4
 /* Halo cloud bridge - lets the app read the router through Xiaomi's cloud when you're away from home.
    Secrets (set by the GitHub workflow): XIAOMI_USER, XIAOMI_PASS, ACCESS_KEY.
    The router exposes only a few things to the cloud: download/upload speed, number of connected devices,
@@ -67,7 +67,8 @@ async function session(env, force) {
 const parseXm = t => JSON.parse(t.replace('&&&START&&&', ''));
 async function login(user, pass) {
   if (!user || !pass) throw Object.assign(new Error('Xiaomi account not configured'), { code: 'config' });
-  const deviceId = 'halo' + Math.random().toString(36).slice(2, 14);
+  // a fixed device id, so once Xiaomi has verified this 'device' it stays trusted
+  const deviceId = 'halo' + (await digest('SHA-256', 'halo:' + user)).slice(0, 12);
   const cookie = `sdkVersion=accountsdk-18.8.15; deviceId=${deviceId}; userId=${user}`;
   const r1 = await fetch('https://account.xiaomi.com/pass/serviceLogin?sid=xiaomiio&_json=true', { headers: { 'User-Agent': UA, Cookie: cookie } });
   const j1 = parseXm(await r1.text());
